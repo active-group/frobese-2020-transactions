@@ -1,4 +1,3 @@
-
 %%%-------------------------------------------------------------------
 %% @doc erlbank_flex_transactions top level supervisor.
 %% @end
@@ -27,10 +26,12 @@ start_link() ->
 %%                  type => worker(),       % optional
 %%                  modules => modules()}   % optional
 init([]) ->
-    SupFlags = #{strategy => one_for_one,
-                 intensity => 0,
-                 period => 1},
-    ChildSpecs = [],
+    SupFlags = #{strategy => one_for_one, intensity => 0,
+		 period => 1},
+    ChildSpecs = [#{id =>
+			transaction_server,       % mandatory
+		    start => {transaction_server, start_link, []}}],
     {ok, {SupFlags, ChildSpecs}}.
 
 %% internal functions
+
