@@ -9,4 +9,4 @@
 
 -record(create, {transaction  :: #transaction{}}).
 
--record(register, {since  :: erlang:timestamp()}).
+-record(register, {since  :: erlang:timestamp() | nil }).

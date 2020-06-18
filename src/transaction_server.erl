@@ -6,16 +6,8 @@
 
 -export([transfer/3]).
 
--export([handle_call/3, handle_cast/2, init/1,
-	 start_link/0]).
-
-init([]) ->
-    % Res = store:get_all_transactions(),
-    {ok, #{1 => 0, 2 => 0}}.
-
-start_link() ->
-    gen_server:start_link({global, ?MODULE}, ?MODULE, [],
-			  []).
+-export([handle_call/3, handle_cast/2,
+	 handle_continue/2, init/1, start_link/0]).
 
 -spec transfer(account_number(), account_number(),
 	       money()) -> {error,
@@ -35,6 +27,15 @@ transfer(Sender_account, Receiver_account, Amount) ->
       {reply, Reply} -> Reply;
       Error -> Error
     end.
+
+init([]) -> {ok, maps:new(), {continue, init}}.
+
+start_link() ->
+    gen_server:start_link({global, ?MODULE}, ?MODULE, [],
+			  []).
+
+handle_continue({continue, init}, State) ->
+    {noreply, State}.
 
 handle_cast(_, State) -> {noreply, State}.
 

@@ -4,19 +4,9 @@
 
 genserver:call an {global, transaction_server}
 
+data.hrl for the shizzle importen
 -record(put, {transaction  :: #transaction{}}).  --> liefert Fehler oder {ok, timestamp}
--record(register, {since  :: erlang:timestamp()}). --> liefert Fehler oder ok --> pushed alle Nachrichte seit "since" per cast an die PID vom Call
-
-
-* file transaction
-  * account A -- amount --> account B
-  * validate account A & amount
-  * save transaction & account A & account B
-
-## Intern
-
-account -> id, amount
-transaction -> id, from, to, amount, timestamp 
+-record(register, {since  :: erlang:timestamp()}). --> liefert Fehler oder ok --> pushed alle Nachrichten seit "since" per cast an die PID vom Call
 
 ## Build
 

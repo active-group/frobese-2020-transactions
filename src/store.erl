@@ -13,14 +13,11 @@ init_database() ->
     ok.
 
 destroy_tables() ->
-    mnesia:del_table_copy(transaction, node()),
-    mnesia:del_table_copy(account, node()).
+    mnesia:del_table_copy(transaction, node()).
 
 create_tables() ->
     mnesia:create_table(transaction,
-			[{attributes, record_info(fields, transaction)}]),
-    mnesia:create_table(account,
-			[{attributes, record_info(fields, account)}]).
+			[{attributes, record_info(fields, transaction)}]).
 
 -spec put_transaction(#transaction{}) -> ok | error.
 
