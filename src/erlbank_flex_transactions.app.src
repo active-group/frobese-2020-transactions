@@ -1,0 +1,19 @@
+{application, erlbank_flex_transactions,
+ [{description, "An OTP application"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {erlbank_flex_transactions_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    lager,
+    jiffy,
+    lager_logstash_backend,
+    cowboy
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.
