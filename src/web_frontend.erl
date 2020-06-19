@@ -51,8 +51,9 @@ init(Req, create) ->
 	bin_to_int(maps:get(<<"transactions_to">>, KeyValues)),
     Amount = bin_to_int(maps:get(<<"transactions_amount">>,
 				 KeyValues)),
-    Body = case business:transfer(SenderAccountNumber,
-				  ReceiverAccountNumber, Amount)
+    Body = case
+	     transaction_client:transfer(SenderAccountNumber,
+					 ReceiverAccountNumber, Amount)
 	       of
 	     {ok, TxId} -> io_lib:format(success(), [TxId]);
 	     {error, Err} -> io_lib:format(error(), [Err])

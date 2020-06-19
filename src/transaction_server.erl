@@ -4,44 +4,35 @@
 
 -include("data.hrl").
 
--export([transfer/3]).
+-record(state, {accounts  :: #{}, pids  :: [pid()]}).
+
+%%
+%% gen_server callbacks
+%%
 
 -export([handle_call/3, handle_cast/2,
 	 handle_continue/2, init/1, start_link/0]).
 
--spec transfer(account_number(), account_number(),
-	       money()) -> {error,
-			    amount_nil | sender_nil | receiver_nil |
-			    sender_account_not_found |
-			    receiver_account_not_found | insufficient_funds |
-			    negative_amount | service_unavailable} |
-			   {ok, erlang:timestamp()}.
-
-transfer(Sender_account, Receiver_account, Amount) ->
-    case gen_server:call({global, ?MODULE},
-			 #create{transaction =
-				     #transaction{sender = Sender_account,
-						  receiver = Receiver_account,
-						  amount = Amount}})
-	of
-      {reply, Reply} -> Reply;
-      Error -> Error
-    end.
-
-init([]) -> {ok, maps:new(), {continue, init}}.
+init([]) ->
+    lager:info("Initializing transaction_server: ~p~n",
+	       [node()]),
+    {ok, #state{accounts = maps:new(), pids = []},
+     {continue, init}}.
 
 start_link() ->
     gen_server:start_link({global, ?MODULE}, ?MODULE, [],
 			  []).
 
-handle_continue({continue, init}, State) ->
+handle_continue(init, State) ->
+    lager:info("Started transaction_server: ~p:~p~n",
+	       [node(), self()]),
     {noreply, State}.
 
 handle_cast(_, State) -> {noreply, State}.
 
-handle_call(#create{transaction = Transaction}, _From,
+handle_call(#transfer{transaction = Transaction}, _From,
 	    State) ->
-    Return = try handle_put(Transaction) of
+    Return = try handle_transfer(Transaction) of
 	       Res -> Res
 	     catch
 	       Error -> {error, Error}
@@ -51,7 +42,11 @@ handle_call(#create{transaction = Transaction}, _From,
 handle_call(_, _From, State) ->
     {reply, {error, wrong_payload}, State}.
 
-handle_put(Transaction) ->
+%%
+%% internal functions
+%%
+
+handle_transfer(Transaction) ->
     Timestamp = erlang:timestamp(),
     validate_transaction(Transaction),
     save_transaction(Transaction, Timestamp).

@@ -26,11 +26,12 @@ start_link() ->
 %%                  type => worker(),       % optional
 %%                  modules => modules()}   % optional
 init([]) ->
-    SupFlags = #{strategy => one_for_one, intensity => 0,
+    SupFlags = #{strategy => one_for_one, intensity => 10,
 		 period => 1},
-    ChildSpecs = [#{id =>
-			transaction_server,       % mandatory
-		    start => {transaction_server, start_link, []}}],
+    ChildSpecs = [#{id => transaction_server,
+		    start => {transaction_server, start_link, []},
+		    restart => permanent, shutdown => 1000,
+		    type => worker}],
     {ok, {SupFlags, ChildSpecs}}.
 
 %% internal functions

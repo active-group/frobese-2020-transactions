@@ -7,6 +7,6 @@
      receiver :: account_number(), 
      amount :: money()}).
 
--record(create, {transaction  :: #transaction{}}).
+-record(transfer, {transaction  :: #transaction{}}).
 
 -record(register, {since  :: erlang:timestamp() | nil }).
