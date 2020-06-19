@@ -35,9 +35,9 @@ handle_continue(accounts, State) ->
     lager:info("Refreshing accounts: ~p:~p~n",
 	       [node(), self()]),
     gen_server:cast({global, accounts},
-		    {register, node(), self()}),
+		    {register, self()}),
     gen_server:cast({global, accounts},
-		    {replay, node(), self()}),
+		    {replay, self()}),
     erlang:send_after(10000, self(), {refresh, accounts}),
     {noreply, State}.
 
