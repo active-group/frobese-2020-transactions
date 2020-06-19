@@ -37,7 +37,7 @@ docker build . -t transactions
 in the root directory of the project. To run the docker container call
  
  ```
- docker run -p 8000:8000 -e "RELX_REPLACE_OS_VARS=true" -e "NODE_NAME=any_name" transactions
+ docker run -p 8001:8001 -e "RELX_REPLACE_OS_VARS=true" -e "NODE_NAME=any_name" transactions
  ```
  
  Running with docker we are able to configure the node name of the erlang node
@@ -45,7 +45,7 @@ in the root directory of the project. To run the docker container call
  vm.args file contains env vars via `RELX_REPLACE_OS_VARS`.
  
  If the docker container is up and running, the web-frontend can be found at
- http://localhost:8000/transactions
+ http://localhost:8001/transactions
 
 
 ## Testing

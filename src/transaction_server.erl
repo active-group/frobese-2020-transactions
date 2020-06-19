@@ -66,6 +66,7 @@ handle_call(_, _From, State) ->
 handle_info({new,
 	     #{account_number := Account, amount := Amount}},
 	    #state{accounts = Accounts} = State) ->
+    lager:info("New account Nr. ~p, amount ~p~n", [Account, Amount]),
     NewAccounts = add_account(#transaction{sender = nil,
 					   receiver = Account, amount = Amount},
 			      Accounts),

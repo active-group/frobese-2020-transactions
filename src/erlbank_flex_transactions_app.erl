@@ -15,8 +15,8 @@ start_cowboy() ->
 				 #{env => #{dispatch => Dispatch}}).
 
 start(_StartType, _StartArgs) ->
-    lager:info("Starting transactions-service: ~p~n",
-	       [node()]),
+    lager:info("Starting transactions-service: ~p, cookie: ~p~n",
+	       [node(), erlang:get_cookie()]),
     start_cowboy(),
     store:init_database(),
     net_adm:ping('accounts@accounts-host'),
