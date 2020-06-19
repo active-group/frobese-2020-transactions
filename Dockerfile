@@ -18,7 +18,7 @@ RUN rebar3 release
 
 
 # Expose relevant ports
-EXPOSE 8000
+EXPOSE 8001
 EXPOSE 8443
 EXPOSE 4369
 
