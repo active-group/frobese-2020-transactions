@@ -117,7 +117,12 @@ validate_transaction(#transaction{amount = Amount},
 validate_transaction(#transaction{sender = Sender,
 				  receiver = Receiver, amount = Amount},
 		     Accounts) ->
-    throw(insufficient_funds),
-    throw(sender_account_not_found),
-    throw(receiver_account_not_found);
+    case {maps:find(Sender, Accounts), maps:find(Receiver, Accounts)} of
+        {{ok,SenderAmount}, {ok, _ReceiverAmount}} -> 
+            if SenderAmount < Amount -> throw(insufficient_funds);
+                true -> ok
+            end;
+        {error, _} -> throw(sender_account_not_found);
+        {_, error} -> throw(receiver_account_not_found)
+    end.
 validate_transaction(_, _) -> ok.
