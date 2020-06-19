@@ -34,7 +34,6 @@ handle_continue(init, State) ->
 handle_continue(accounts, State) ->
     lager:info("Refreshing accounts: ~p:~p~n",
 	       [node(), self()]),
-    lager:info("State: ~p~n", [State]),
     gen_server:cast({global, accounts},
 		    {register, node(), self()}),
     gen_server:cast({global, accounts},
@@ -46,13 +45,14 @@ handle_cast(_, State) -> {noreply, State}.
 
 handle_call(#transfer{transaction = Transaction}, _From,
 	    State) ->
-    Return = try transfer(Transaction, State) of
-	       Res -> Res
-	     catch
-	       Error -> {error, Error}
-	     end,
-    NewState = state_add_transaction(Transaction, State),
-    {reply, Return, NewState};
+    try transfer(Transaction, State) of
+      Res ->
+	  NewState = state_add_transaction(Transaction, State),
+	  lager:info("State after transfer: ~p~n", [NewState]),
+	  {reply, Res, NewState}
+    catch
+      Error -> {reply, {error, Error}, State}
+    end;
 handle_call(#register{since = Since}, _From,
 	    #state{pids = Pids} = State) ->
     %TODO monitor and deregister processes
