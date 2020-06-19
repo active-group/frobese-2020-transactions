@@ -2,8 +2,9 @@
 
 -include("data.hrl").
 
--export([get_all_transactions/0, get_transactions/1,
-	 init_database/0, put_transaction/1]).
+-export([get_all_transactions/0, get_all_transactions/1,
+	 get_transactions/1, init_database/0,
+	 put_transaction/1]).
 
 init_database() ->
     mnesia:create_schema([node()]),
@@ -22,15 +23,30 @@ create_tables() ->
 
 populate_tables() ->
     %% 1=>1000  2=>1000 3=>1000
-    put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 1, receiver = 2, amount=100}),
-    put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 1, receiver = 2, amount=200}),
-    put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 1, receiver = 2, amount=400}),
+    put_transaction(#transaction{timestamp =
+				     erlang:timestamp(),
+				 sender = 1, receiver = 2, amount = 100}),
+    put_transaction(#transaction{timestamp =
+				     erlang:timestamp(),
+				 sender = 1, receiver = 2, amount = 200}),
+    put_transaction(#transaction{timestamp =
+				     erlang:timestamp(),
+				 sender = 1, receiver = 2, amount = 400}),
     %% 1=>300   2=>1700 3=>1000
-    put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 2, receiver = 1, amount=300}),
-    put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 2, receiver = 1, amount=200}),
+    put_transaction(#transaction{timestamp =
+				     erlang:timestamp(),
+				 sender = 2, receiver = 1, amount = 300}),
+    put_transaction(#transaction{timestamp =
+				     erlang:timestamp(),
+				 sender = 2, receiver = 1, amount = 200}),
     %% 1=>800   2=>1200 3=>1000
-    put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 3, receiver = 1, amount=600}),
-    put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 3, receiver = 2, amount=400}).
+    put_transaction(#transaction{timestamp =
+				     erlang:timestamp(),
+				 sender = 3, receiver = 1, amount = 600}),
+    put_transaction(#transaction{timestamp =
+				     erlang:timestamp(),
+				 sender = 3, receiver = 2, amount = 400}).
+
     %% 1=>400  2=>1600  3=>0
 
 -spec put_transaction(#transaction{}) -> ok | error.

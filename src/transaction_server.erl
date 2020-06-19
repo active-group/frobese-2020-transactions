@@ -33,7 +33,7 @@ handle_cast(_, State) -> {noreply, State}.
 
 handle_call(#transfer{transaction = Transaction}, _From,
 	    State) ->
-    Return = try handle_transfer(Transaction) of
+    Return = try handle_transfer(Transaction, State) of
 	       Res -> Res
 	     catch
 	       Error -> {error, Error}
@@ -45,7 +45,7 @@ handle_call(#register{since = Since}, _From,
     %TODO monitor and deregister processes
     Transactions = store:get_all_transactions(Since),
     publish_transaction(_From, Transactions),
-    {reply, Return,
+    {reply, ok,
      State#state{pids = sets:add_element(_From, Pids)}};
 handle_call(_, _From, State) ->
     {reply, {error, wrong_payload}, State}.
@@ -90,7 +90,7 @@ publish_transaction(Pids,
 publish_transaction(Pids, [Head | Tail]) ->
     publish:as_cast(Pids, {transaction, Head}),
     publish_transaction(Pids, Tail);
-publish_transaction(Pids, []) -> ok.
+publish_transaction(_Pids, []) -> ok.
 
 save_transaction(Transaction, Timestamp) ->
     case
@@ -114,14 +114,10 @@ validate_transaction(#transaction{amount = Amount},
 		     _Accounts)
     when Amount < 0 ->
     throw(negative_amount);
-% validate_transaction(#transaction{sender = Sender},
-% 		     _Accounts) ->
-%     throw(sender_account_not_found);
-% validate_transaction(#transaction{receiver = Receiver},
-% 		     Accounts) ->
-%     throw(receiver_account_not_found);
-% validate_transaction(#transaction{sender = Sender,
-% 				  amount = Amount},
-% 		     Accounts) ->
-%     throw(insufficient_funds);
+validate_transaction(#transaction{sender = Sender,
+				  receiver = Receiver, amount = Amount},
+		     Accounts) ->
+    throw(insufficient_funds),
+    throw(sender_account_not_found),
+    throw(receiver_account_not_found);
 validate_transaction(_, _) -> ok.
