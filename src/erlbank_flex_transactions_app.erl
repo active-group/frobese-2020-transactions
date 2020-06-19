@@ -19,6 +19,7 @@ start(_StartType, _StartArgs) ->
 	       [node()]),
     start_cowboy(),
     store:init_database(),
+    net_adm:ping('accounts@accounts-host'),
     Res = erlbank_flex_transactions_sup:start_link(),
     lager:info("Started transactions feed: ~p~n", [node()]),
     Res.

@@ -54,7 +54,7 @@ case "$1" in
             sleep 10
         done
 
-        sleep 10
+        sleep 30
 
         echo mycookie > $HOME/.erlang.cookie
         chmod 400 $HOME/.erlang.cookie
