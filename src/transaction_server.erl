@@ -27,6 +27,10 @@ start_link() ->
 handle_continue(init, State) ->
     lager:info("Started transaction_server: ~p:~p~n",
 	       [node(), self()]),
+    gen_server:cast({global, accounts},
+		    {register, node(), self()}),
+    gen_server:cast({global, accounts},
+		    {replay, node(), self()}),
     {noreply, State}.
 
 handle_cast(_, State) -> {noreply, State}.
@@ -50,6 +54,20 @@ handle_call(#register{since = Since}, _From,
 handle_call(_, _From, State) ->
     {reply, {error, wrong_payload}, State}.
 
+handle_info({new,
+	     #{account_number => Account, amount => Amount}},
+	    State) ->
+    {noreply, state_add_account(Account, Amount, State)};
+handle_info({replay, List}, State) ->
+    NewState = lists:foldl(fun (#{account_number => Account,
+				  amount => Amount},
+				Acc) ->
+				   state_add_account(Account, Amount, Acc)
+			   end,
+			   State, List),
+    {noreply, NewState};
+handle_info(_, State) -> {noreply, State}.
+
 %%
 %% internal functions
 %%
@@ -61,7 +79,20 @@ handle_transfer(Transaction,
     save_transaction(Transaction, Timestamp),
     publish_transaction(sets:to_list(Pids), Transaction).
 
-% handle_register ( Pid , State ) -> state_add_transactions ( [ ] , State ) -> State ; state_add_transactions ( [ Head | Tail ] , State ) -> NewState = state_add_transaction ( Head , State ) , state_add_transactions ( Tail , NewState ) .
+state_add_account(Account, Amount,
+		  #state{accounts = Accounts} = State) ->
+    Updated = maps:put(Account, Amount, Accounts),
+    % store:get_transactions(Account)
+    {noreply, State#state{accounts = Updated}}.
+
+state_add_transaction(#transaction{sender = Sender,
+				   receiver = Receiver, amount = Amount},
+		      #state{accounts = Accounts} = State) ->
+    Map1 = maps:update_with(Sender,
+			    fun (Old) -> Old - Amount end, Accounts),
+    Map2 = maps:update_with(Receiver,
+			    fun (Old) -> Old + Amount end, Map1),
+    State#state{accounts = Map2}.
 
 % init_state(Transactions) ->
 %     BlankState = lists:foldl(fun (#transaction{sender =
@@ -74,15 +105,6 @@ handle_transfer(Transaction,
 % 			     maps:new(), Transactions),
 %     update_state(Transactions, BlankState);
 % init_state(_) -> maps:new().
-
-state_add_transaction(#transaction{sender = Sender,
-				   receiver = Receiver, amount = Amount},
-		      #state{accounts = Accounts} = State) ->
-    Map1 = maps:update_with(Sender,
-			    fun (Old) -> Old - Amount end, Accounts),
-    Map2 = maps:update_with(Receiver,
-			    fun (Old) -> Old + Amount end, Map1),
-    State#state{accounts = Map2}.
 
 publish_transaction(Pids,
 		    #transaction{} = Transaction) ->
