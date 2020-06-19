@@ -23,9 +23,7 @@ start(_StartType, _StartArgs) ->
     lager:info("Started transactions feed: ~p~n", [node()]),
     Res.
 
-stop(_State) ->
-    %% store:destroy_tables().
-    ok.
+stop(_State) -> store:destroy_tables().
 
 %% internal functions
 

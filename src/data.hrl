@@ -3,7 +3,7 @@
 
 -record(transaction, 
     {timestamp :: erlang:timestamp(), 
-     sender :: account_number(), 
+     sender :: account_number(),
      receiver :: account_number(), 
      amount :: money()}).
 

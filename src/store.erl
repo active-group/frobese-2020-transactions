@@ -10,7 +10,7 @@ init_database() ->
     mnesia:start(),
     destroy_tables(),
     create_tables(),
-    populate_tables(),
+    % populate_tables(),
     ok.
 
 destroy_tables() ->
@@ -34,7 +34,7 @@ populate_tables() ->
     %% 1=>300   2=>1700 3=>1000
     put_transaction(#transaction{timestamp =
 				     erlang:timestamp(),
-				 sender = 2, receiver = 1, amount = 300}),
+				 sender = nil, receiver = 1, amount = 300}),
     put_transaction(#transaction{timestamp =
 				     erlang:timestamp(),
 				 sender = 2, receiver = 1, amount = 200}),

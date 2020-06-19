@@ -34,6 +34,7 @@ handle_continue(init, State) ->
 handle_continue(accounts, State) ->
     lager:info("Refreshing accounts: ~p:~p~n",
 	       [node(), self()]),
+    lager:info("State: ~p~n", [State]),
     gen_server:cast({global, accounts},
 		    {register, node(), self()}),
     gen_server:cast({global, accounts},
@@ -93,6 +94,7 @@ handle_info(_, State) -> {noreply, State}.
 
 init_accounts() ->
     Initial = store:find_transactions({create, nil}),
+    lager:info("Initial: ~p~n", [Initial]),
     lists:foldl(fun (#transaction{} = Transaction, Acc) ->
 			add_account(Transaction, Acc)
 		end,
@@ -100,27 +102,34 @@ init_accounts() ->
 
 add_account(#transaction{sender = nil,
 			 receiver = Receiver, amount = Amount} =
-		transaction,
+		Transaction,
 	    Accounts) ->
     case maps:is_key(Receiver, Accounts) of
       true -> Accounts;
       false ->
 	  List = store:find_transactions({account, Receiver}),
-	  update_account([transaction | List], Receiver, Accounts)
+	  NewAccounts = maps:put(Receiver, 0, Accounts),
+	  update_account([Transaction | List], Receiver,
+			 NewAccounts)
     end.
 
-update_account([#transaction{sender = Sender} | Tail],
+update_account([#transaction{sender = Sender,
+			     amount = Amount}
+		| Tail],
 	       Account, Accounts)
     when Account == Sender ->
-    %Balance
-    update_account(Tail, Account, Accounts);
-update_account([#transaction{receiver = Receiver}
+    NewAccounts = maps:update_with(Account,
+				   fun (Old) -> Old - Amount end, Accounts),
+    update_account(Tail, Account, NewAccounts);
+update_account([#transaction{receiver = Receiver,
+			     amount = Amount}
 		| Tail],
 	       Account, Accounts)
     when Account == Receiver ->
-    %Balance
-    update_account(Tail, Account, Accounts);
-update_account([], Account, Accounts) -> Account.
+    NewAccounts = maps:update_with(Account,
+				   fun (Old) -> Old + Amount end, Accounts),
+    update_account(Tail, Account, NewAccounts);
+update_account([], Account, Accounts) -> Accounts.
 
 transfer(Transaction,
 	 #state{accounts = Accounts, pids = Pids}) ->
