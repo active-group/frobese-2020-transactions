@@ -27,15 +27,12 @@ start_link() ->
 handle_continue(init, State) ->
     lager:info("Started transaction_server: ~p:~p~n",
 	       [node(), self()]),
-<<<<<<< HEAD
     Accounts = init_accounts(),
     {noreply, State#state{accounts = Accounts},
      {continue, accounts}};
 handle_continue(accounts, State) ->
     lager:info("Getting accounts: ~p:~p~n",
 	       [node(), self()]),
-=======
->>>>>>> 90b5f9f153c8dc145fc3224ef5baa33390afddc7
     gen_server:cast({global, accounts},
 		    {register, node(), self()}),
     gen_server:cast({global, accounts},
@@ -64,7 +61,6 @@ handle_call(_, _From, State) ->
     {reply, {error, wrong_payload}, State}.
 
 handle_info({new,
-<<<<<<< HEAD
 	     #{account_number := Account, amount := Amount}},
 	    #state{accounts = Accounts} = State) ->
     NewAccounts = add_account(#transaction{sender = nil,
@@ -85,19 +81,6 @@ handle_info({replay, List},
 			      end,
 			      Accounts, List),
     {noreply, State#state{accounts = NewAccounts}};
-=======
-	     #{account_number => Account, amount => Amount}},
-	    State) ->
-    {noreply, state_add_account(Account, Amount, State)};
-handle_info({replay, List}, State) ->
-    NewState = lists:foldl(fun (#{account_number => Account,
-				  amount => Amount},
-				Acc) ->
-				   state_add_account(Account, Amount, Acc)
-			   end,
-			   State, List),
-    {noreply, NewState};
->>>>>>> 90b5f9f153c8dc145fc3224ef5baa33390afddc7
 handle_info(_, State) -> {noreply, State}.
 
 %%
