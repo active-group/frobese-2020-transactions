@@ -11,8 +11,9 @@
 %% gen_server callbacks
 %%
 
--export([handle_call/3, handle_cast/2,
-	 handle_continue/2, init/1, start_link/0]).
+-export([add_account/2, handle_call/3, handle_cast/2,
+	 handle_continue/2, handle_info/2, init/1,
+	 start_link/0]).
 
 init([]) ->
     lager:info("Initializing transaction_server: ~p~n",
@@ -31,12 +32,13 @@ handle_continue(init, State) ->
     {noreply, State#state{accounts = Accounts},
      {continue, accounts}};
 handle_continue(accounts, State) ->
-    lager:info("Getting accounts: ~p:~p~n",
+    lager:info("Refreshing accounts: ~p:~p~n",
 	       [node(), self()]),
     gen_server:cast({global, accounts},
 		    {register, node(), self()}),
     gen_server:cast({global, accounts},
 		    {replay, node(), self()}),
+    erlang:send_after(10000, self(), {refresh, accounts}),
     {noreply, State}.
 
 handle_cast(_, State) -> {noreply, State}.
@@ -81,6 +83,8 @@ handle_info({replay, List},
 			      end,
 			      Accounts, List),
     {noreply, State#state{accounts = NewAccounts}};
+handle_info({refresh, accounts}, State) ->
+    {noreply, State, {continue, accounts}};
 handle_info(_, State) -> {noreply, State}.
 
 %%
@@ -88,7 +92,11 @@ handle_info(_, State) -> {noreply, State}.
 %%
 
 init_accounts() ->
-    Initial = store:find_transactions({create, nil}).
+    Initial = store:find_transactions({create, nil}),
+    lists:foldl(fun (#transaction{} = Transaction, Acc) ->
+			add_account(Transaction, Acc)
+		end,
+		maps:new(), Initial).
 
 add_account(#transaction{sender = nil,
 			 receiver = Receiver, amount = Amount} =
@@ -96,12 +104,23 @@ add_account(#transaction{sender = nil,
 	    Accounts) ->
     case maps:is_key(Receiver, Accounts) of
       true -> Accounts;
-      false -> store:find_transactions({account, Receiver})
+      false ->
+	  List = store:find_transactions({account, Receiver}),
+	  update_account([transaction | List], Receiver, Accounts)
     end.
 
-        % update_account(Transaction, Accounts)
-
-% update_account ( # transaction { } , Accounts ) -> .
+update_account([#transaction{sender = Sender} | Tail],
+	       Account, Accounts)
+    when Account == Sender ->
+    %Balance
+    update_account(Tail, Account, Accounts);
+update_account([#transaction{receiver = Receiver}
+		| Tail],
+	       Account, Accounts)
+    when Account == Receiver ->
+    %Balance
+    update_account(Tail, Account, Accounts);
+update_account([], Account, Accounts) -> Account.
 
 transfer(Transaction,
 	 #state{accounts = Accounts, pids = Pids}) ->
