@@ -30,9 +30,8 @@ populate_tables() ->
     put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 2, receiver = 1, amount=200}),
     %% 1=>800   2=>1200 3=>1000
     put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 3, receiver = 1, amount=600}),
-    put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 3, receiver = 2, amount=400}),
+    put_transaction(#transaction{timestamp = erlang:timestamp(), sender = 3, receiver = 2, amount=400}).
     %% 1=>400  2=>1600  3=>0
-    .
 
 -spec put_transaction(#transaction{}) -> ok | error.
 
