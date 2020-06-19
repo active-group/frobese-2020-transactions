@@ -101,7 +101,7 @@ init_accounts() ->
 		maps:new(), Initial).
 
 add_account(#transaction{sender = nil,
-			 receiver = Receiver, amount = Amount} =
+			 receiver = Receiver} =
 		Transaction,
 	    Accounts) ->
     case maps:is_key(Receiver, Accounts) of
@@ -129,7 +129,7 @@ update_account([#transaction{receiver = Receiver,
     NewAccounts = maps:update_with(Account,
 				   fun (Old) -> Old + Amount end, Accounts),
     update_account(Tail, Account, NewAccounts);
-update_account([], Account, Accounts) -> Accounts.
+update_account([], _Account, Accounts) -> Accounts.
 
 transfer(Transaction,
 	 #state{accounts = Accounts, pids = Pids}) ->
@@ -137,12 +137,6 @@ transfer(Transaction,
     validate_transaction(Transaction, Accounts),
     save_transaction(Transaction, Timestamp),
     publish_transaction(sets:to_list(Pids), Transaction).
-
-state_add_account(Account, Amount,
-		  #state{accounts = Accounts} = State) ->
-    Updated = maps:put(Account, Amount, Accounts),
-    % store:get_transactions(Account)
-    {noreply, State#state{accounts = Updated}}.
 
 state_add_transaction(#transaction{sender = Sender,
 				   receiver = Receiver, amount = Amount},
@@ -152,18 +146,6 @@ state_add_transaction(#transaction{sender = Sender,
     Map2 = maps:update_with(Receiver,
 			    fun (Old) -> Old + Amount end, Map1),
     State#state{accounts = Map2}.
-
-% init_state(Transactions) ->
-%     BlankState = lists:foldl(fun (#transaction{sender =
-% 						   Sender,
-% 					       receiver = Receiver},
-% 				  Map) ->
-% 				     Map1 = maps:put(Sender, 0, Map),
-% 				     maps:put(Receiver, 0, Map1)
-% 			     end,
-% 			     maps:new(), Transactions),
-%     update_state(Transactions, BlankState);
-% init_state(_) -> maps:new().
 
 publish_transaction(Pids,
 		    #transaction{} = Transaction) ->
