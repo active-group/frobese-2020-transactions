@@ -7,6 +7,7 @@ genserver:call an {global, transaction_server}
 data.hrl for the shizzle importen
 -record(put, {transaction  :: #transaction{}}).  --> liefert Fehler oder {ok, timestamp}
 -record(register, {since  :: erlang:timestamp()}). --> liefert Fehler oder ok --> pushed alle Nachrichten seit "since" per cast an die PID vom Call
+{transaction, #transaction{}}
 
 ## Build
 

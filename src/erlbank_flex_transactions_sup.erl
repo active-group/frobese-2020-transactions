@@ -2,7 +2,6 @@
 %% @doc erlbank_flex_transactions top level supervisor.
 %% @end
 %%%-------------------------------------------------------------------
-
 -module(erlbank_flex_transactions_sup).
 
 -behaviour(supervisor).
@@ -26,13 +25,14 @@ start_link() ->
 %%                  type => worker(),       % optional
 %%                  modules => modules()}   % optional
 init([]) ->
-    SupFlags = #{strategy => one_for_one, intensity => 10,
-		 period => 1},
-    ChildSpecs = [#{id => transaction_server,
-		    start => {transaction_server, start_link, []},
-		    restart => permanent, shutdown => 1000,
-		    type => worker}],
+    SupFlags = #{strategy => one_for_one, intensity => 10, period => 1},
+    ChildSpecs = [#{
+        id => transaction_server,
+        start => {transaction_server, start_link, []},
+        restart => permanent,
+        shutdown => 1000,
+        type => worker
+    }],
     {ok, {SupFlags, ChildSpecs}}.
 
 %% internal functions
-

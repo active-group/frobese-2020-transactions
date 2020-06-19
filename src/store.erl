@@ -66,6 +66,14 @@ get_all_transactions() ->
 	  end,
     mnesia_transaction(Fun).
 
+get_all_transactions(nil) -> get_all_transactions();
+get_all_transactions(Since) ->
+    lists:filter(fun (#transaction{timestamp =
+				       Timestamp}) ->
+			 Since < Timestamp
+		 end,
+		 get_all_transactions()).
+
 mnesia_transaction(Fun) ->
     case mnesia:transaction(Fun) of
       {atomic, Res} -> Res;

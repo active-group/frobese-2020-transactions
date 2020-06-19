@@ -4,7 +4,8 @@
 
 -include("data.hrl").
 
--record(state, {accounts  :: #{}, pids  :: [pid()]}).
+-record(state,
+	{accounts  :: #{}, pids  :: sets:set(pid())}).
 
 %%
 %% gen_server callbacks
@@ -16,7 +17,7 @@
 init([]) ->
     lager:info("Initializing transaction_server: ~p~n",
 	       [node()]),
-    {ok, #state{accounts = maps:new(), pids = []},
+    {ok, #state{accounts = maps:new(), pids = sets:new()},
      {continue, init}}.
 
 start_link() ->
@@ -37,8 +38,15 @@ handle_call(#transfer{transaction = Transaction}, _From,
 	     catch
 	       Error -> {error, Error}
 	     end,
-    NewState = add_transaction_to_state(Transaction, State),
+    NewState = state_add_transaction(Transaction, State),
     {reply, Return, NewState};
+handle_call(#register{since = Since}, _From,
+	    #state{pids = Pids} = State) ->
+    %TODO monitor and deregister processes
+    Transactions = store:get_all_transactions(Since),
+    publish_transaction(_From, Transactions),
+    {reply, Return,
+     State#state{pids = sets:add_element(_From, Pids)}};
 handle_call(_, _From, State) ->
     {reply, {error, wrong_payload}, State}.
 
@@ -46,10 +54,14 @@ handle_call(_, _From, State) ->
 %% internal functions
 %%
 
-handle_transfer(Transaction) ->
+handle_transfer(Transaction,
+		#state{accounts = Accounts, pids = Pids}) ->
     Timestamp = erlang:timestamp(),
-    validate_transaction(Transaction),
-    save_transaction(Transaction, Timestamp).
+    validate_transaction(Transaction, Accounts),
+    save_transaction(Transaction, Timestamp),
+    publish_transaction(sets:to_list(Pids), Transaction).
+
+% handle_register ( Pid , State ) -> state_add_transactions ( [ ] , State ) -> State ; state_add_transactions ( [ Head | Tail ] , State ) -> NewState = state_add_transaction ( Head , State ) , state_add_transactions ( Tail , NewState ) .
 
 % init_state(Transactions) ->
 %     BlankState = lists:foldl(fun (#transaction{sender =
@@ -63,20 +75,22 @@ handle_transfer(Transaction) ->
 %     update_state(Transactions, BlankState);
 % init_state(_) -> maps:new().
 
-update_state([], State) -> State;
-update_state([Head | Tail], State) ->
-    NewState = add_transaction_to_state(Head, State),
-    update_state(Tail, NewState).
-
-add_transaction_to_state(#transaction{sender = Sender,
-				      receiver = Receiver, amount = Amount},
-			 State) ->
+state_add_transaction(#transaction{sender = Sender,
+				   receiver = Receiver, amount = Amount},
+		      #state{accounts = Accounts} = State) ->
     Map1 = maps:update_with(Sender,
-			    fun (Old) -> Old - Amount end, State),
-    maps:update_with(Receiver,
-		     fun (Old) -> Old + Amount end, Map1).
+			    fun (Old) -> Old - Amount end, Accounts),
+    Map2 = maps:update_with(Receiver,
+			    fun (Old) -> Old + Amount end, Map1),
+    State#state{accounts = Map2}.
 
-% add_account_to_state(#transaction{sender})
+publish_transaction(Pids,
+		    #transaction{} = Transaction) ->
+    publish_transaction(Pids, [Transaction]);
+publish_transaction(Pids, [Head | Tail]) ->
+    publish:as_cast(Pids, {transaction, Head}),
+    publish_transaction(Pids, Tail);
+publish_transaction(Pids, []) -> ok.
 
 save_transaction(Transaction, Timestamp) ->
     case
@@ -87,13 +101,27 @@ save_transaction(Transaction, Timestamp) ->
       _ -> {ok, Timestamp}
     end.
 
-validate_transaction(#transaction{amount = nil}) ->
+validate_transaction(#transaction{amount = nil},
+		     _Accounts) ->
     throw(amount_nil);
-validate_transaction(#transaction{sender = nil}) ->
+validate_transaction(#transaction{sender = nil},
+		     _Accounts) ->
     throw(sender_nil);
-validate_transaction(#transaction{receiver = nil}) ->
+validate_transaction(#transaction{receiver = nil},
+		     _Accounts) ->
     throw(receiver_nil);
-validate_transaction(#transaction{amount = Amount})
+validate_transaction(#transaction{amount = Amount},
+		     _Accounts)
     when Amount < 0 ->
     throw(negative_amount);
-validate_transaction(_) -> ok.
+% validate_transaction(#transaction{sender = Sender},
+% 		     _Accounts) ->
+%     throw(sender_account_not_found);
+% validate_transaction(#transaction{receiver = Receiver},
+% 		     Accounts) ->
+%     throw(receiver_account_not_found);
+% validate_transaction(#transaction{sender = Sender,
+% 				  amount = Amount},
+% 		     Accounts) ->
+%     throw(insufficient_funds);
+validate_transaction(_, _) -> ok.
